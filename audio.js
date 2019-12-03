@@ -26,28 +26,85 @@ export const getNoteIndex = frequency => {
 }
 
 /**
- * Simple auto correlation algorithm to calculate the
+ * Auto correlation algorithm to calculate the
  * fundamental frequency from a time domain signal.
  *
- * TODO: Replace for frequency domain version
- * https://dsp.stackexchange.com/questions/386/autocorrelation-in-audio-analysis
+ * https://github.com/cwilso/PitchDetect/blob/master/js/pitchdetect.js
  */
-export const autoCorrelate = (buffer, sampleRate) => {
-  let n = 1024
-  let bestR = 0
-  let bestK = -1
+export const autoCorrelate = (buf, sampleRate) => {
+  const GOOD_ENOUGH_CORRELATION = 0.9
+  const SIZE = buf.length;
+  const MIN_SAMPLES = 4
+  const MAX_SAMPLES = Math.floor(SIZE / 2);
 
-  for (let k = 8; k <= 1000; k++) {
+  let bestOffset = -1;
+  let bestCorrelation = 0;
+  let rms = 0;
+  let foundGoodCorrelation = false;
+  let correlations = new Array(MAX_SAMPLES);
+
+  for (let i = 0; i < SIZE; i++) {
+    let val = buf[i];
+    rms += val * val;
+  }
+  rms = Math.sqrt(rms / SIZE);
+  if (rms < 0.01) {
+    return -1;  // not enough signal
+  }
+
+  let lastCorrelation = 1;
+  for (let offset = MIN_SAMPLES; offset < MAX_SAMPLES; offset++) {
+    let correlation = 0;
+
+    for (let i = 0; i < MAX_SAMPLES; i++) {
+      correlation += Math.abs((buf[i]) - (buf[i + offset]));
+    }
+    correlation = 1 - (correlation / MAX_SAMPLES);
+    correlations[offset] = correlation;
+    if ((correlation > GOOD_ENOUGH_CORRELATION) && (correlation > lastCorrelation)) {
+      foundGoodCorrelation = true;
+      if (correlation > bestCorrelation) {
+        bestCorrelation = correlation;
+        bestOffset = offset;
+      }
+    } else if (foundGoodCorrelation) {
+      let shift = (correlations[bestOffset + 1] - correlations[bestOffset - 1]) / correlations[bestOffset];
+      return sampleRate / (bestOffset + (8 * shift));
+    }
+    lastCorrelation = correlation;
+  }
+
+  if (bestCorrelation > 0.01) {
+    console.log("f = " + sampleRate / bestOffset + "Hz (rms: " + rms + " confidence: " + bestCorrelation + ")")
+    return sampleRate / bestOffset;
+  }
+  return -1;
+}
+
+/**
+ * Simple but inefficient auto correlation algorithm to calculate the
+ * fundamental frequency from a time domain signal.
+ */
+export const autoCorrelateSimple = (buffer, sampleRate) => {
+  let bestOffset = -1
+  let bestCorrelation = 0
+  let numSamples = buffer.length / 2
+
+  /*
+   * Scan through windows from 10 - 1000 samples,
+   * allowing detection of periodic waves from ~ 44Hz - 4400Hz.
+   */
+  for (let k = 10; k <= 1000; k++) {
     let sum = 0
 
-    for (let i = 0; i < n; i++) {
-      sum += ((buffer[i] - 128) / 128) * ((buffer[i + k] - 128) / 128);
+    for (let i = 0; i < numSamples; i++) {
+      sum += buffer[i] * buffer[i + k]
     }
 
-    let r = sum / n
-    if (r > bestR) {
-      bestR = r;
-      bestK = k;
+    let r = sum / (numSamples + k)
+    if (r > bestCorrelation) {
+      bestCorrelation = r
+      bestOffset = k
     }
 
     if (r > 0.9) {
@@ -55,12 +112,13 @@ export const autoCorrelate = (buffer, sampleRate) => {
     }
   }
 
-  if (bestR > 0.0025) {
-    // bestK is the period (in frames) of the matched frequency.
-    // Divide the sample rate by this to get the frequency value.
-    return sampleRate / bestK;
+  if (bestCorrelation > 0.0025) {
+    /*
+     * bestOffset is the period (in frames) of the matched frequency.
+     * Divide the sample rate by this to get the frequency value.
+     */
+    return sampleRate / bestOffset
   } else {
-    // No good correlation found.
-    return -1;
+    return -1  // No good correlation found.
   }
-};
+}

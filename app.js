@@ -24,9 +24,6 @@ let app = new Vue({
       stream: null,
       source: null,
       processor: null,
-      analyser: null,
-      spectrum: null,
-      buffer: null,
     },
     ui: {
       frequency: 0,
@@ -42,16 +39,15 @@ let app = new Vue({
           this.audio.stream = await navigator.mediaDevices.getUserMedia({ audio: true })
           this.audio.processor = this.audio.context.createScriptProcessor(0, 1, 1)
           this.audio.source = this.audio.context.createMediaStreamSource(this.audio.stream)
-          this.audio.analyser = this.audio.context.createAnalyser()
 
           this.audio.source.connect(this.audio.processor)
-          this.audio.source.connect(this.audio.analyser)
           this.audio.processor.connect(this.audio.context.destination)
 
           this.audio.processor.onaudioprocess = function(e) {
-            app.audio.buffer = new Uint8Array(app.audio.analyser.fftSize)
-            app.audio.analyser.getByteTimeDomainData(app.audio.buffer)
-            let fundamental = autoCorrelate(app.audio.buffer, app.audio.context.sampleRate)
+            let fundamental = autoCorrelate(
+              e.inputBuffer.getChannelData(0),
+              app.audio.context.sampleRate
+            )
             if (fundamental !== -1) {
               const index = getNoteIndex(fundamental)
               Vue.set(app.ui, 'frequency', fundamental)
