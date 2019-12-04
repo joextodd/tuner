@@ -34,38 +34,36 @@ export const getNoteIndex = frequency => {
  * https://www.sciencedirect.com/science/article/pii/S1319157810800023
  */
 export const autoCorrelate = (samples, sampleRate) => {
-  let bestOffset = -1
-  let bestCorrelation = 0
-  let N = samples.length
+  const r = new Array(1000).fill(0)
+  const N = samples.length
 
   /*
    * Scan through windows from 10 - 1000 samples,
    * allowing detection of periodic waves from ~ 44Hz - 4400Hz.
    */
   for (let k = 10; k <= 1000; k++) {
-    let sum = 0
 
     for (let i = 0; i < N - k - 1; i++) {
-      sum += samples[i] * samples[i + k]
+      r[k] += samples[i] * samples[i + k]
     }
 
-    let r = sum / (N - k)
-    if (r > bestCorrelation) {
-      bestCorrelation = r
-      bestOffset = k
-    }
+    r[k] = r[k] / (N - k)
 
-    if (r > 0.9) {
+    if (r[k] > 0.9) {
       break;
     }
   }
 
-  if (bestCorrelation > 0.005) {
+  let max = 0
+  r.forEach(v => max = v > max ? v : max)
+  let bestK = r.indexOf(max)
+
+  if (max > 0.0001) {
     /*
-     * bestOffset is the period (in frames) of the matched frequency.
+     * bestK is the period (in frames) of the matched frequency.
      * Divide the sample rate by this to get the frequency value.
      */
-    return (sampleRate / bestOffset).toFixed(2)
+    return (sampleRate / bestK).toFixed(2)
   } else {
     return -1  // No good correlation found.
   }
