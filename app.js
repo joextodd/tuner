@@ -8,9 +8,13 @@
 import {
   getNote,
   getNoteFrequency,
+  getPeakFrequency,
   getNoteIndex,
   autoCorrelate,
 } from './audio.js'
+
+const frameSize = 4096
+const maxFrequency = 2000
 
 // App
 let app = new Vue({
@@ -37,18 +41,21 @@ let app = new Vue({
         try {
           this.audio.context = new (window.AudioContext || window.webkitAudioContext)()
           this.audio.stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-          this.audio.processor = this.audio.context.createScriptProcessor(0, 1, 1)
+          this.audio.processor = this.audio.context.createScriptProcessor(frameSize, 1, 1)
           this.audio.source = this.audio.context.createMediaStreamSource(this.audio.stream)
+          this.audio.filter = this.audio.context.createBiquadFilter()
 
           this.audio.source.connect(this.audio.processor)
           this.audio.processor.connect(this.audio.context.destination)
 
           this.audio.processor.onaudioprocess = function(e) {
+            let t = performance.now()
             let fundamental = autoCorrelate(
               e.inputBuffer.getChannelData(0),
               app.audio.context.sampleRate
             )
-            if (fundamental !== -1) {
+            // console.log(performance.now() - t)
+            if (fundamental !== -1 && fundamental < maxFrequency) {
               const index = getNoteIndex(fundamental)
               Vue.set(app.ui, 'frequency', fundamental)
               Vue.set(app.ui, 'note', getNote(index))

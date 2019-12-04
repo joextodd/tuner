@@ -15,25 +15,14 @@
   </head>
   <body>
     <main id="app">
-      <div class="content">
-        <div class="row">
-          <button v-on:click="start">{{ startButtonText }}</button>
-        </div>
-        <div class="row">
-          <h5>Frequency</h5>
-          <span>{{ ui.frequency }}Hz</span>
-        </div>
-        <div class="row">
-          <h5>Note</h5>
-          <span>{{ ui.note }}</span>
-        </div>
-        <div class="row">
-          <h5>Offset</h5>
-          <span>{{ ui.offset }}</span>
-        </div>
+      <div class="controls">
+        <button v-on:click="start">{{ startButtonText }}</button>
       </div>
-      <footer>
-      </footer>
+      <div class="content">
+        <p class="note">{{ ui.note }}</p>
+      </div>
+      <span>{{ ui.frequency }}Hz</span>
+      <span>{{ ui.offset }}</span>
     </main>
 
     <script type="module" src="./app.js"></script>
