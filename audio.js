@@ -10,7 +10,7 @@ const f0 = { idx: 57, freq: 440 }
 const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 export const getNote = index => notes[index % 12]
-export const getCents = (f1, f2) => 1200 / Math.log2(f2 / f1)
+export const getCents = (f1, f2) => 1200 / Math.log2(f1 / f2)
 export const getPeakFrequency = spectrum => spectrum.indexOf(Math.max(...spectrum))
 
 /**
@@ -31,9 +31,16 @@ export const getNoteIndex = frequency => {
  * fundamental frequency from a time domain signal.
  *
  * http://www.nyu.edu/classes/bello/MIR_files/periodicity.pdf
- * https://www.sciencedirect.com/science/article/pii/S1319157810800023
  */
 export const autoCorrelate = (samples, sampleRate) => {
+
+  if (Math.max(...samples) < 0.01) {
+    return -1  // Check above noise threshold
+  }
+
+  let bestOffset = 0
+  let bestCorrelation = -1
+
   const r = new Array(1000).fill(0)
   const N = samples.length
 
@@ -52,18 +59,19 @@ export const autoCorrelate = (samples, sampleRate) => {
     if (r[k] > 0.9) {
       break;
     }
+
+    if (r[k] > bestCorrelation) {
+      bestOffset = k
+      bestCorrelation = r[k]
+    }
   }
 
-  let max = 0
-  r.forEach(v => max = v > max ? v : max)
-  let bestK = r.indexOf(max)
-
-  if (max > 0.0001) {
+  if (bestCorrelation > 0.0001) {
     /*
-     * bestK is the period (in frames) of the matched frequency.
+     * bestOffset is the period (in frames) of the matched frequency.
      * Divide the sample rate by this to get the frequency value.
      */
-    return (sampleRate / bestK).toFixed(2)
+    return (sampleRate / bestOffset).toFixed(2)
   } else {
     return -1  // No good correlation found.
   }
