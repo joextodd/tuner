@@ -10,7 +10,7 @@ const f0 = { idx: 57, freq: 440 }
 const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
 export const getNote = index => notes[index % 12]
-export const getCents = (f1, f2) => 1200 / Math.log2(f1 / f2)
+export const getCents = (f1, f2) => 1200 * (Math.log(f2 / f1) / Math.log(2))
 export const getPeakFrequency = spectrum => spectrum.indexOf(Math.max(...spectrum))
 
 /**
