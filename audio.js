@@ -34,8 +34,9 @@ export const getNoteIndex = frequency => {
  */
 export const autoCorrelate = (samples, sampleRate) => {
 
+  // Check above noise threshold
   if (Math.max(...samples) < 0.01) {
-    return -1  // Check above noise threshold
+    return -1.0
   }
 
   let bestOffset = 0
@@ -45,10 +46,10 @@ export const autoCorrelate = (samples, sampleRate) => {
   const N = samples.length
 
   /*
-   * Scan through windows from 10 - 1000 samples,
-   * allowing detection of periodic waves from ~ 44Hz - 4400Hz.
+   * Scan through windows from 24 - 580 samples,
+   * allowing detection of periodic waves from ~ 76Hz - 1837Hz.
    */
-  for (let k = 10; k <= 1000; k++) {
+  for (let k = 580; k >= 24; k--) {
 
     for (let i = 0; i < N - k - 1; i++) {
       r[k] += samples[i] * samples[i + k]
@@ -56,13 +57,13 @@ export const autoCorrelate = (samples, sampleRate) => {
 
     r[k] = r[k] / (N - k)
 
-    if (r[k] > 0.9) {
-      break;
-    }
-
     if (r[k] > bestCorrelation) {
       bestOffset = k
       bestCorrelation = r[k]
+    }
+
+    if (r[k] > 0.1) {
+      break;
     }
   }
 
@@ -73,6 +74,6 @@ export const autoCorrelate = (samples, sampleRate) => {
      */
     return (sampleRate / bestOffset).toFixed(2)
   } else {
-    return -1  // No good correlation found.
+    return -1.0  // No good correlation found.
   }
 }

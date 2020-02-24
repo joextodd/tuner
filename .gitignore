@@ -1,2 +1,2 @@
-*.o
-run_test
+node_modules
+wasm

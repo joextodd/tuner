@@ -13,7 +13,7 @@ import {
   autoCorrelate,
 } from './audio.js'
 
-const frameSize = 4096
+const frameSize = 16384
 const maxFrequency = 2000
 
 // App
@@ -49,18 +49,14 @@ let app = new Vue({
           this.audio.processor.connect(this.audio.context.destination)
 
           this.audio.processor.onaudioprocess = function(e) {
-            // let t = performance.now()
-            let fundamental = autoCorrelate(
-              e.inputBuffer.getChannelData(0),
-              app.audio.context.sampleRate
-            )
-            // console.log(performance.now() - t)
+            let data = e.inputBuffer.getChannelData(0)
+            let fundamental = autoCorrelate(data, app.audio.context.sampleRate)
             if (fundamental !== -1 && fundamental < maxFrequency) {
               const index = getNoteIndex(fundamental)
               Vue.set(app.ui, 'frequency', fundamental)
               Vue.set(app.ui, 'note', getNote(index))
               Vue.set(app.ui, 'offset', app.ui.frequency - getNoteFrequency(index))
-              Vue.set(app.ui, 'cents', app.ui.frequency, getNoteFrequency(index))
+              Vue.set(app.ui, 'cents', getCents(app.ui.frequency, getNoteFrequency(index)))
             }
           }
           this.state.started = true
