@@ -13,8 +13,11 @@ import {
   autoCorrelate,
 } from './audio.js'
 
-const frameSize = 16384
+import KalmanFilter from './kalman.js'
+
+const frameSize = 1024
 const maxFrequency = 2000
+const kalmanFilter = new KalmanFilter({ R: 0.01, Q: 3 })
 
 // App
 let app = new Vue({
@@ -28,6 +31,7 @@ let app = new Vue({
       stream: null,
       source: null,
       processor: null,
+      filter: null,
     },
     ui: {
       frequency: 0,
@@ -56,7 +60,10 @@ let app = new Vue({
               Vue.set(app.ui, 'frequency', fundamental)
               Vue.set(app.ui, 'note', getNote(index))
               Vue.set(app.ui, 'offset', app.ui.frequency - getNoteFrequency(index))
-              Vue.set(app.ui, 'cents', getCents(app.ui.frequency, getNoteFrequency(index)))
+              const cents = kalmanFilter.filter(
+                getCents(app.ui.frequency, getNoteFrequency(index)))
+              Vue.set(app.ui, 'cents', cents)
+              console.log(app.ui.cents)
             }
           }
           this.state.started = true
