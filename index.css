@@ -2,6 +2,7 @@ html {
   font-size: 16px;
   font-family: sans-serif;
   background: white;
+  background-color: #212121;
 }
 
 body,
@@ -18,7 +19,6 @@ noscript {
   height: 100vh;
   height: calc(var(--vh, 1vh) * 100);
   font-family: Helvetica Neue, sans-serif;
-  background-color: #111;
   color: #00caff;
   display: flex;
   align-items: center;
@@ -28,11 +28,10 @@ noscript {
 
 main {
   width: 100%;
-  height: calc(var(--vh, 1vh) * 100);
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
 }
 
 .content {
