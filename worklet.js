@@ -12,7 +12,9 @@ class TunerAudioProcessor extends AudioWorkletProcessor {
   }
 
   process(inputs, outputs, parameters) {
-    this.buffer = this.buffer.concat(Array.from(inputs[0][0]))
+    const input = inputs[0].constructor === Float32Array ?
+      inputs[0] : Array.from(inputs[0][0])
+    this.buffer = this.buffer.concat(input)
     if (this.buffer.length === this.bufferSize) {
       let data = new Float32Array(this.buffer)
       let frequency = AMDF({ sampleRate: this.sampleRate })(data)

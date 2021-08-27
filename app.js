@@ -29,13 +29,12 @@ let app = new Vue({
     start: async function () {
       if (!this.state.started) {
         try {
+          const workletUrl = new URL('worklet.js', import.meta.url)
           this.audio.context = new (window.AudioContext || window.webkitAudioContext)();
           this.audio.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           this.audio.source = this.audio.context.createMediaStreamSource(this.audio.stream);
-          this.audio.worklet = await this.audio.context.audioWorklet.addModule('worklet.js')
-
+          this.audio.worklet = await this.audio.context.audioWorklet.addModule(workletUrl)
           this.audio.processor = new AudioWorkletNode(this.audio.context, 'tuner-audio-processor', {
-            numberOfInputs: 1, numberOfOutputs: 1,
             processorOptions: {
               sampleRate: this.audio.context.sampleRate
             }
